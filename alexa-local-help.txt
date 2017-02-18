@@ -1,0 +1,8 @@
+How to use alexa-app-server for Capital One Transfers:
+
+1) cd into alexa-app-server/examples
+2) run "node server"
+3) URL for website "localhost:8080/alexa/cap_one_transfers"
+
+Inside apps directorty of alexa-app-server/examples there is a folder called capital_one_transfers.
+This folder contains all the javascript code for alexa to run.
