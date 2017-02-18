@@ -50,15 +50,10 @@ function getAccount(callback, customerID) {
     request.get(getAccountsUrl).end(function(err, res) {
         if (err) return err.body;
         callback(res.body);
-        /*for(var i in res.body) {                    
-        if(res.body[i].type === 'Checking') {
-        var accountID = res.body[i]._id;
-        console.log('Account ID: ' + accountID);*/
-        /*return accountID;*/
       });
 }
 
-function resHandler(result) {
+function accountHandler(result) {
   for(var i in result) {                    
     if(result[i].type === 'Checking') {
         console.log('Account ID: ' + result[i]._id);
@@ -67,8 +62,7 @@ function resHandler(result) {
   }
 }
 
-var id = getAccount(resHandler, '56c66be5a73e492741507429');
-//console.log(id);
+getAccount(accountHandler, '56c66be5a73e492741507429');
 
 function transfers(senderAccountID, recieverAccountID, amount) {
   var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(senderAccountID).concat('/transfers?key=').concat(apikey)
@@ -89,7 +83,7 @@ function transfers(senderAccountID, recieverAccountID, amount) {
     });
 }
 
-transfers(myCustomerID, '56c66be6a73e492741507f64', 0.01);
+//transfers(myCustomerID, '56c66be6a73e492741507f64', 0.01);
 
 function getDate() {
   var today = new Date();
