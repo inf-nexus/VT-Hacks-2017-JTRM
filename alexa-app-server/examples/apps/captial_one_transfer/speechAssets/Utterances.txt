@@ -1,0 +1,9 @@
+PaymentIntent Pay first name FNAME last name LNAME AMOUNT dollars 
+PaymentIntent Transfer first name FNAME last name LNAME AMOUNT dollars 
+PaymentIntent Send first name FNAME last name LNAME AMOUNT dollars 
+PaymentIntent Pay first name FNAME last name LNAME AMOUNT bucks 
+PaymentIntent Transfer first name FNAME last name LNAME AMOUNT bucks 
+PaymentIntent Send first name FNAME last name LNAME AMOUNT bucks 
+TransferAmounts How much have I transfered NAME 
+TransferAmounts paid NAME 
+TransferAmounts sent NAME

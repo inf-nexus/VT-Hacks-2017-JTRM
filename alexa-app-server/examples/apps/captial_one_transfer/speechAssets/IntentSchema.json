@@ -1,0 +1,1 @@
+{ "intents": [ { "intent": "PaymentIntent", "slots": [ { "name": "FNAME", "type": "LITERAL" }, { "name": "LNAME", "type": "LITERAL" }, { "name": "AMOUNT", "type": "NUMBER" } ] }, { "intent": "TransferAmounts", "slots": [ { "name": "NAME", "type": "LITERAL" } ] } ]
