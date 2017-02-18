@@ -115,6 +115,4 @@ function getDate() {
   return yyyy + '-' + mm + '-' + dd;
 }
 
-
-
 module.exports = app;
