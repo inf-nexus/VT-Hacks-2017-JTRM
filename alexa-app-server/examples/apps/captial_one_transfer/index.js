@@ -4,6 +4,7 @@ var skillService = new alexa.app('capital_one_transfers');
 var request = require('superagent');
 
 var apikey = 'b7b749abc5269fb91882402aad541b37';
+var myCustomerID = '56c66be6a73e492741507f63';
 
 // Allow this module to be reloaded by hotswap when changed
 module.change_code = 1;
@@ -41,39 +42,63 @@ skillService.intent('AMAZON.HelpIntent',{},
 
 
 app.intent('PaymentIntent', {
-  	"slots": { "NAME": "LITERAL", "AMOUNT": "NUMBER" },
-  	"utterances": ["{Pay |Transfer |Send } {NAME} {AMOUNT}{ dollars| bucks}"]
+    "slots": { "FNAME": "LITERAL", "LNAME": "LITERAL", "AMOUNT": "NUMBER" },
+    "utterances": ["{Pay first name|Transfer first name |Send first name } {FNAME} {last name} {LNAME} {AMOUNT}{ dollars| bucks}"]
 }, function(req, res) {
-  	//res.say('Transfering ' + req.slot('NAME') + ' ' + req.slot('AMOUNT') + ' dollars');
-  	transfers('56c66be6a73e492741507f63', '56c66be6a73e492741507f64', 0.01, res, req);
+    res.say('Transfering ' + req.slot('FNAME') + ' ' + req.slot('AMOUNT') + ' dollars');
+    makeTransfer(req.slot('FNAME'), req.slot('LNAME'), 0.01);
 });
 
 app.intent('TransferAmounts', { 
-	"slots": { "NAME": "LITERAL"},
-	"utterances": ["{How much have I transfered |paid |sent } {NAME}"]
+  "slots": { "NAME": "LITERAL"},
+  "utterances": ["{How much have I transfered |paid |sent } {NAME}"]
 }, function(req, res) {
+  res.say('In progress ...');
 });
 
-function transfers(senderAccountID, recieverAccountID, amount, res, req) {
-  var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(senderAccountID).concat('/transfers?key=').concat(apikey)
-  request
-    .post(postTransfersUrl)
-    .set('Content-Type', 'application/json')
-    .send({
-      "medium": "balance",
-      "payee_id": recieverAccountID,
-      "amount": amount,
-      "transaction_date": getDate(),
-      "description": "transfer_test"
-    })
-    .end(function(err, res) {
-      if (err) console.log(err);
-      console.log(res.status);
-      console.log(res.body);
-    });
-    res.say('transfered!');
-}
+function makeTransfer(firstName, lastName, amount) {
+  var cid;
+  var aid;
 
+  var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey); 
+  request.get(getCustomersUrl).end(function(err, res) {
+        if (err) console.log(err.body);
+        for(var i in res.body) {                    
+          if(res.body[i].first_name === firstName && res.body[i].last_name === lastName) {
+            console.log('Customer ID: ' + res.body[i]._id);
+            cid = res.body[i]._id;
+            break;
+          }
+        }
+          var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(cid).concat('/accounts?key=').concat(apikey); 
+          request.get(getAccountsUrl).end(function(err, res) {
+          if (err) console.log(err.body);
+          for(var i in res.body) {                    
+            if(res.body[i].type === 'Checking') {
+              console.log('Account ID: ' + res.body[i]._id);
+              aid = res.body[i]._id;
+              break;
+            }
+          }
+            var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myCustomerID).concat('/transfers?key=').concat(apikey)
+            request
+            .post(postTransfersUrl)
+            .set('Content-Type', 'application/json')
+            .send({
+              "medium": "balance",
+              "payee_id": aid,
+              "amount": amount,
+              "transaction_date": getDate(),
+              "description": "transfer_test"
+            })
+            .end(function(err, res) {
+              if (err) console.log(err);
+              console.log(res.status);
+              console.log(res.body);
+            });
+          });
+      });
+}
 
 function getDate() {
   var today = new Date();
