@@ -74,9 +74,9 @@ var reprompt = "I didn't hear what you said could you repeat that.";
 skillService.launch(function(request, response){
   var prompt = 'Welcome to Capital One P2P Transfer' +
   'You can either transfer money or request money.';
-    console.log('here in skillService launch');
+    //console.log('here in skillService launch');
   response.say(prompt).reprompt(reprompt).shouldEndSession(false);
-    console.log('here out of skillService launch');
+    //console.log('here out of skillService launch');
 });
 
 var cancelIntentFunction = function(request, response){
@@ -101,14 +101,14 @@ skillService.intent('AMAZON.HelpIntent',{},
   });
 
 var getDataHelperFromRequest = function(request){
-    console.log('here in getDataHelperFromRequest');
+    //console.log('here in getDataHelperFromRequest');
     var dataHelperData = request.session(DATA_HELPER_SESSION_KEY);
-    console.log('here out of getDataHelperFromRequest');
+    //console.log('here out of getDataHelperFromRequest');
     return getDataHelper(dataHelperData);
 };
 
 var saveDataFunction = function(userId, obj, request, response){
-  console.log('in save data');
+  //console.log('in save data');
   databaseHelper.storeData(userId, obj).then(
     function(result){
       return result;
@@ -158,22 +158,33 @@ var paymentIntentFunction = function(dataHelper, request, response){
   dataHelper.started = true;
   if(userId !== undefined){
     dataHelper.getStep().value = userId;
+    dataHelper.userId = userId;
+    //dataHelper.currentStep++;
   }
 
   if(paymentAmount !== undefined){
     dataHelper.getStep().value = paymentAmount;
+    dataHelper.paymentAmount = paymentAmount;
+    //dataHelper.currentStep++;
   }
 
   if(dataHelper.completed()){
-    var newTransaction = new Transaction(userId, paymentAmount);
+    console.log('in completed step');
+    var newTransaction = new Transaction(dataHelper.userId, dataHelper.paymentAmount);
+
+    response.say('your transaction has successfully been completed');
+    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userId);
     //saveTransactionFunction(request, response, userId, newTransaction);
 
     //saveDataFunction(userId, newTransaction, request, response);
-    //response.shouldEndSession(true);
+    response.shouldEndSession(true);
   }else{
+
     if(userId !== undefined || paymentAmount !== undefined){
+      console.log('incrementing step');
       dataHelper.currentStep++;
     }
+    console.log('here');
     if(dataHelper.currentStep < 2){
     response.say(dataHelper.getPrompt());
   }

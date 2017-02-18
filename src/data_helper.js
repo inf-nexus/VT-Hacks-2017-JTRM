@@ -6,6 +6,8 @@ var _=require('lodash');
 function DataHelper(obj){
   this.started = false;
   this.currentStep = 0;
+  this.userid = null;
+  this.paymentAmount = null;
   this.interactionIndex = 0;
   //this.database = [];
   this.interactions = [
@@ -38,7 +40,9 @@ DataHelper.prototype.getPrompt = function(){
 };
 
 DataHelper.prototype.completed = function(){
-  return this.currentStep === 2;
+  console.log('current step is ' + this.currentStep);
+  //return this.currentStep === 2;
+  return this.currentStep === (this.currentInteraction().steps.length - 1);
 }
 
 DataHelper.prototype.currentInteraction = function(){
