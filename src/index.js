@@ -18,14 +18,8 @@ var DATA_HELPER_SESSION_KEY = 'data_session';
 var DatabaseHelper = require('./database_helper');
 var databaseHelper = new DatabaseHelper();
 
-// skillService.pre = function(request, response, type){
-//   databaseHelper.createDatabaseTable();
-// };
-
 var getDataHelper = function(dataHelperData){
-  //console.log('here in getDataHelper');
-  //var getDataHelper = request.session(DATA_HELPER_SESSION_KEY);
-    //console.log('here in past getDataHelper');
+
   if(dataHelperData === undefined){
     dataHelperData = {};
   }
@@ -36,39 +30,6 @@ var getDataHelper = function(dataHelperData){
       this.userId = userId;
       this.paymentAmount = paymentAmount;
   };
-
-// let item = {
-//   init: function (className) {
-//     this.className = className;
-//     this.assignments = [];
-//   },
-//   addAssignment: function(assignment){
-//     this.assignments.push(assignment);
-//   }
-//
-// };
-//
-// let assignment = {
-//   init: function(dateDue){
-//     this.dateDue = dateDue;
-//     this.avgCompletionTime = [];
-//     this.completed = false;
-//   },
-//   setAssignmentCompleted: function(){
-//     this.completed = true;
-//   }
-//
-// }
-//
-// let completionTimeObj = {
-//   init: function(){
-//     this.completionTime = false;
-//     this.associatedKeyWords = [];
-//   },
-//   addKeyWord: function(keyword){
-//     this.associatedKeyWords.push(keyword);
-//   }
-// }
 
 var reprompt = "I didn't hear what you said could you repeat that.";
 skillService.launch(function(request, response){
@@ -118,23 +79,6 @@ var saveDataFunction = function(userId, obj, request, response){
     response.say('you have successfully sent money to ', userId);
     response.shouldEndSession(true);
 }
-
-// skillService.intent('SaveDataIntent', {
-//   'utterances': ['{save} {|this|my} data']
-// },
-// function(request, response){
-//   var userId = request.userId;
-//   var dataHelper = getDataHelperFromRequest(request);
-//   databaseHelper.storeData(userId, dataHelper).then(
-//     function(result){
-//       return result;
-//     }).catch(function(err){
-//       console.log(err);
-//     });
-//     response.say('your data has successfully been stored.');
-//     response.shouldEndSession(true).send();
-//     return false;
-// });
 
 skillService.intent('PaymentIntent',{
   'slots':[{'NAME': 'AMAZON.US_FIRST_NAME'},{'AMOUNT': 'AMAZON.NUMBER'}],
@@ -214,159 +158,9 @@ skillService.intent('SaveTransactionIntent', {},
   var newTransaction = new Transaction(userId, paymentAmount);
 
   //databaseHelper.storeData(userId, newTransaction).then(
-
-  return new Promise(function (fullfill, reject){
-    databaseHelper.storeData(userId, newTransaction).then(
-      function(result) {
-        return result;
-      }).catch(function(error) {});
-    response.say(
-      'Your transaction has been saved.'
-    );
-    response.shouldEndSession(true).send();
-  });
-
-
     //return false;
 
-}
+  }
 );
-//
-  //var prompt_one = 'Ok, who do you want to transfer money to?';
-
-  //var prompt_two = 'Ok, how much money do you want to transfer, in US dollars?';
-  //response.say(prompt_one);
-
-
-
-  // if(userId !== undefined){
-  //   response.say('Ok, how much money do you want to transfer, in US dollars?');
-  //   requestCompleted = true;
-  // }else{
-  //   response.reprompt("I didn't understand that could you repeat that");
-  // }
-
-  // response.say('Ok, how much money do you want to transfer, in US dollars?');
-  // var paymentAmount = request.slot('AMOUNT');
-  //
-  // if(paymentAmount === undefined){
-  //   response.reprompt("I didn't understand could you repeat that");
-  // }
-  // var newTransaction = new Transaction(userId, paymentAmount);
-  //
-  // if(userId !== undefined && paymentAmount !== undefined){
-  //   saveDataFunction(userId, newTransaction, request, response);
-  // }
-
-  //var stepValue = request.slot('Query');
-  //var dataHelper = new DataHelper();
-  // var dataHelper = getDataHelper(request);
-  // dataHelper.started = true;
-  // if(stepValue !== undefined){
-  // dataHelper.getStep().value = stepValue;
-  // }
-  // if(dataHelper.completed()){
-  //   var completedMadLib = dataHelper.buildMadlib();
-  //   response.card('data to be stored', stepValue);
-  //   response.say('Data is successfully stored!'
-  // + 'Data that is store is ' + stepValue);
-  // response.shouldEndSession(true);
-  // }else{
-  //   if(stepValue !== undefined){
-  //     dataHelper.currentStep++;
-  //   }
-  //   response.say('Give me ' + dataHelper.getPrompt());
-  //   response.reprompt("I didn't hear anything give me " +
-  //   dataHelper.getPrompt() + 'to continue');
-  //   response.shouldEndSession(false);
-  // }
-//   console.log('here in paymentIntentFunction');
-//   if(requestCompleted){
-//       response.shouldEndSession(true);
-//   }else{
-//     response.shouldEndSession(false);
-//   }
-//
-//     console.log('here out of paymentIntentFunction');
-//   //response.session(DATA_HELPER_SESSION_KEY, dataHelper);
-//   //response.send();
-// };
-
-
 
  module.exports = skillService;
-//   var userRequest = request.slot('Query');
-//   if(_.isEmpty(userRequest)){
-//     var prompt = "I didn't hear a request. Give me a request.";
-//     response.say(prompt).reprompt(reprompt).shouldEndSession(false);
-//     return true;
-//   }else{
-//   var dataHelper = new DataHelper();
-//   dataHelper.getData(userRequest).then(function(responseObj){
-//     console.log(responseObj);
-//     response.say(dataHelper.formatDataResponse(responseObj)).send();
-//   }).catch(function(err){
-//     console.log(err.statusCode);
-//     var prompt = "I dont have data for " + userRequest;
-//     response.say(prompt).reprompt(reprompt).shouldEndSession(false).send();
-//   });
-//
-//   return false;
-// }
-
-//
-
-// //-------------prototype examples-----------------
-// // var coolItem = Object.create(item);
-// // coolItem.init('systems');
-// // coolItem.addAssignment('compLang hw1');
-// // console.log(coolItem);
-// // var assignment2 = Object.create(assignment);
-// // assignment2.init(new Date().toISOString());
-// // console.log(assignment2);
-//
-// // exports.handler = function(event, context, callback){
-// //
-// //     var params = {
-// //         TableName: 'hokieCalandarTable'
-// //     };
-// //
-// //     localDBStorage = docClient.scan(params, function(err, data){
-// //       if(err) console.log(err);
-// //       else console.log(data);
-// //     });
-// //
-// //     var alexa = Alexa.handler(event, context);
-// //     alexa.appId = appId;
-// //     alexa.registerHandlers(handlers);
-// //     alexa.execute();
-// //   };
-//
-//
-//
-
-
-  //---------------------put example--------------------------------//
-  // var params = {
-  //   TableName: 'hokieCalandarTable',
-  //
-  //   Item: {
-  //       userid: 'jacob',
-  //       message: 'sample message'
-  //   }
-  //
-  // };
-  //
-  // docClient.put(params,function(err, data){
-  //   console.log('attempting to put object in docClient');
-  //     if(err){
-  //
-  //       callback(err, null);
-  //
-  //     }else{
-  //
-  //       callback(null,data);
-  //     }
-  //
-  // });
-  //---------------------put example--------------------------------//

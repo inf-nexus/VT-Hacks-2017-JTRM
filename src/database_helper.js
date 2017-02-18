@@ -3,15 +3,6 @@
 
 var data_helper = require('./data_helper');
 const DATABASE_TABLE_NAME = 'hokieCalandarTable';
-// var localUrl = 'http://localhost:4000';
-//
-// var localCredentials = {
-//   region: 'us-east-1',
-//   accessKeyId: 'fake',
-//   secretAccessKey: 'fake'
-// };
-
-//var localDynasty = require('dynasty')('localCredentials', localUrl);
 var credentials = {
     region: 'us-east-1'
 };
@@ -22,29 +13,6 @@ function DatabaseHelper(){}
 var databaseTable = function(){
   return dynasty.table(DATABASE_TABLE_NAME);
 };
-
-// DatabaseHelper.prototype.createDatabaseTable = function() {
-//   return dynasty.describe(DATABASE_TABLE_NAME).catch(function(err){
-//     console.log('createDatabaseTable, err: ', err);
-//     return dynasty.create(DATABASE_TABLE_NAME, {
-//       key_schema: {
-//         hash: ['userId', 'string']
-//       }
-//     });
-//   });
-// };
-
-// function readJSON(filename){
-//   return new Promise(function (fulfill, reject){
-//     readFile(filename, 'utf8').done(function (res){
-//       try {
-//         fulfill(JSON.parse(res));
-//       } catch (ex) {
-//         reject(ex);
-//       }
-//     }, reject);
-//   });
-// }
 
 DatabaseHelper.prototype.storeData = function(userId, data){
   return new Promise(function(fullfill, reject){
