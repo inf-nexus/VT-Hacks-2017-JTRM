@@ -3,16 +3,20 @@
 
 var data_helper = require('./data_helper');
 const DATABASE_TABLE_NAME = 'hokieCalandarTable';
-var localUrl = 'http://localhost:4000';
+// var localUrl = 'http://localhost:4000';
+//
+// var localCredentials = {
+//   region: 'us-east-1',
+//   accessKeyId: 'fake',
+//   secretAccessKey: 'fake'
+// };
 
-var localCredentials = {
-  region: 'us-east-1',
-  accessKeyId: 'fake',
-  secretAccessKey: 'fake'
+//var localDynasty = require('dynasty')('localCredentials', localUrl);
+var credentials = {
+    region: 'us-east-1'
 };
 
-var localDynasty = require('dynasty')('localCredentials', localUrl);
-
+var dynasty = require('dynasty')(credentials);
 function DatabaseHelper(){}
 
 var databaseTable = function(){
@@ -30,14 +34,37 @@ var databaseTable = function(){
 //   });
 // };
 
+// function readJSON(filename){
+//   return new Promise(function (fulfill, reject){
+//     readFile(filename, 'utf8').done(function (res){
+//       try {
+//         fulfill(JSON.parse(res));
+//       } catch (ex) {
+//         reject(ex);
+//       }
+//     }, reject);
+//   });
+// }
+
 DatabaseHelper.prototype.storeData = function(userId, data){
+  return new Promise(function(fullfill, reject){
+
+
+
   console.log('writing to database user: ', userId);
   return databaseTable().insert({
-    userId: userId,
+    userid: userId,
     data: JSON.stringify(data)
-  }).catch(function(err){
-    console.log(err);
+  }).done(function(err){
+    try{
+      fullfill(JSON.parse(err));
+    }catch(ex){
+      reject(ex);
+    }
+  }, reject);
+    //console.log(err);
   });
+
 };
 
 DatabaseHelper.prototype.readData = function(userId){
