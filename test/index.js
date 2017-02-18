@@ -44,11 +44,31 @@ request
     }
 });*/
 
+getCustomer(customerHandler, 'John', 'Boyer');
+
+function getCustomer(callback, firstName, lastName) {
+  var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey); 
+  request.get(getCustomersUrl).end(function(err, res) {
+        if (err) console.log(err.body);
+        callback(res.body, firstName, lastName);
+      });
+}
+
+function customerHandler(result, firstName, lastName) {
+  var cid;
+  for(var i in result) {                    
+    if(result[i].first_name === firstName && result[i].last_name === lastName) {
+        console.log('Customer ID: ' + result[i]._id);
+        cid = result[i]._id;
+        break;
+    }
+  }
+}
+
 function getAccount(callback, customerID) {
-  var hi;
   var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(customerID).concat('/accounts?key=').concat(apikey); 
     request.get(getAccountsUrl).end(function(err, res) {
-        if (err) return err.body;
+        if (err) console.log(err.body);
         callback(res.body);
       });
 }
@@ -62,7 +82,7 @@ function accountHandler(result) {
   }
 }
 
-getAccount(accountHandler, '56c66be5a73e492741507429');
+//getAccount(accountHandler, '56c66be5a73e492741507429');
 
 function transfers(senderAccountID, recieverAccountID, amount) {
   var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(senderAccountID).concat('/transfers?key=').concat(apikey)
@@ -80,10 +100,9 @@ function transfers(senderAccountID, recieverAccountID, amount) {
       if (err) console.log(err);
       console.log(res.status);
       console.log(res.body);
+      return true;
     });
 }
-
-//transfers(myCustomerID, '56c66be6a73e492741507f64', 0.01);
 
 function getDate() {
   var today = new Date();
@@ -100,3 +119,49 @@ function getDate() {
   return yyyy + '-' + mm + '-' + dd;
 }
 
+
+function makeTransfer(firstName, lastName, amount) {
+  var cid;
+  var aid;
+
+  var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey); 
+  request.get(getCustomersUrl).end(function(err, res) {
+        if (err) console.log(err.body);
+        for(var i in res.body) {                    
+          if(res.body[i].first_name === firstName && res.body[i].last_name === lastName) {
+            console.log('Customer ID: ' + res.body[i]._id);
+            cid = res.body[i]._id;
+            break;
+          }
+        }
+          var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(cid).concat('/accounts?key=').concat(apikey); 
+          request.get(getAccountsUrl).end(function(err, res) {
+          if (err) console.log(err.body);
+          for(var i in res.body) {                    
+            if(res.body[i].type === 'Checking') {
+              console.log('Account ID: ' + res.body[i]._id);
+              aid = res.body[i]._id;
+              break;
+            }
+          }
+            var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myCustomerID).concat('/transfers?key=').concat(apikey)
+            request
+            .post(postTransfersUrl)
+            .set('Content-Type', 'application/json')
+            .send({
+              "medium": "balance",
+              "payee_id": aid,
+              "amount": amount,
+              "transaction_date": getDate(),
+              "description": "transfer_test"
+            })
+            .end(function(err, res) {
+              if (err) console.log(err);
+              console.log(res.status);
+              console.log(res.body);
+            });
+          });
+      });
+}
+
+makeTransfer('David', 'Tennant', 0.01);

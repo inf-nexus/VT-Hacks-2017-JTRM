@@ -1,0 +1,26 @@
+{
+  "name": "capital_one_transfer",
+  "version": "1.0.0",
+  "description": "Uses Capital One api to transfer money",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "alexa",
+    "skill"
+  ],
+  "author": "Jacob Contreras",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jcontreras1126/alexa-hokie-schedule-assistant-/issues"
+  },
+  "dependencies": {
+    "alexa-app": "^3.1.0",
+    "alexa-sdk": "^1.0.6",
+    "dynasty": "^0.2.4",
+    "lodash": "^4.17.4",
+    "request-promise": "^4.1.1",
+    "superagent": "^3.4.4"
+  }
+}
