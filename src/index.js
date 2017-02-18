@@ -1,15 +1,19 @@
 'use strict';
 //var Alexa = require('alexa-sdk');
 //module.change_code = 1;
-var Promise = require('promise');
 var Alexa = require('alexa-app');
 var skillService = new Alexa.app('capitalOneP2PTransfer');
 const AWS = require('aws-sdk');
 //var _ = require('lodash');
 var appId = 'amzn1.ask.skill.f6116fb0-3213-4020-9e12-7cec70174fcc';
 
-var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
-var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
+const USERID = 'Jacob'; //who you are in the database
+//const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
+
+//var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
+//var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
+
+
 
 var _ = require('lodash');
 //var localDBStorage = []; //will be populated by dynamodb
@@ -18,6 +22,15 @@ var DATA_HELPER_SESSION_KEY = 'data_session';
 var DatabaseHelper = require('./database_helper');
 var databaseHelper = new DatabaseHelper();
 
+var DatabaseHelperMock = require('./database_helper_mock');
+var databaseHelperMock = new DatabaseHelperMock();
+
+function transaction(recipentid, paymentType, paymentAmount){
+  this.recipentid = recipentid;
+  this.paymentType = paymentType;
+  this.paymentAmount = paymentAmount;
+}
+
 var getDataHelper = function(dataHelperData){
 
   if(dataHelperData === undefined){
@@ -25,11 +38,6 @@ var getDataHelper = function(dataHelperData){
   }
   return new DataHelper(dataHelperData);
 };
-
-  let Transaction = function(userId, paymentAmount){
-      this.userId = userId;
-      this.paymentAmount = paymentAmount;
-  };
 
 var reprompt = "I didn't hear what you said could you repeat that.";
 skillService.launch(function(request, response){
@@ -68,17 +76,17 @@ var getDataHelperFromRequest = function(request){
     return getDataHelper(dataHelperData);
 };
 
-var saveDataFunction = function(userId, obj, request, response){
-  //console.log('in save data');
-  databaseHelper.storeData(userId, obj).then(
-    function(result){
-      return result;
-    }).catch(function(err){
-      console.log(err);
-    });
-    response.say('you have successfully sent money to ', userId);
-    response.shouldEndSession(true);
-}
+// var saveDataFunction = function(userId, obj, request, response){
+//   //console.log('in save data');
+//   databaseHelper.storeData(userId, obj).then(
+//     function(result){
+//       return result;
+//     }).catch(function(err){
+//       console.log(err);
+//     });
+//     response.say('you have successfully sent money to ', userId);
+//     response.shouldEndSession(true);
+// }
 
 skillService.intent('PaymentIntent',{
   'slots':[{'NAME': 'AMAZON.US_FIRST_NAME'},{'AMOUNT': 'AMAZON.NUMBER'}],
@@ -114,21 +122,18 @@ var paymentIntentFunction = function(dataHelper, request, response){
 
   if(dataHelper.completed()){
     console.log('in completed step');
-    var newTransaction = new Transaction(dataHelper.userId, dataHelper.paymentAmount);
-
-    response.say('your transaction has successfully been completed');
-    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userId);
-    //saveTransactionFunction(request, response, userId, newTransaction);
-
+    var newTransaction = new transaction(dataHelper.userId, 'payment', dataHelper.paymentAmount);
+    saveTransactionFunction(request, response, dataHelper, newTransaction);
     //saveDataFunction(userId, newTransaction, request, response);
-    response.shouldEndSession(true);
+    //response.shouldEndSession(true);
+
   }else{
 
     if(userId !== undefined || paymentAmount !== undefined){
-      console.log('incrementing step');
+      //console.log('incrementing step');
       dataHelper.currentStep++;
     }
-    console.log('here');
+    //console.log('here');
     if(dataHelper.currentStep < 2){
     response.say(dataHelper.getPrompt());
   }
@@ -138,6 +143,20 @@ var paymentIntentFunction = function(dataHelper, request, response){
   response.session(DATA_HELPER_SESSION_KEY, dataHelper);
   response.send();
 };
+
+var saveTransactionFunction = function(request, response, dataHelper, newTransaction){
+  //var success = databaseHelperMock.storeData(userId, newTransaction);
+  //var newTransaction = new transaction()
+  var success = databaseHelperMock.updateTransactionHistory(USERID, newTransaction);
+  if(success){
+    response.say('your transaction has successfully been completed');
+    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userId);
+  }else{
+    response.say('your transaction was unsuccessful');
+  }
+  response.shouldEndSession(true).send();
+  return success;
+}
 
 // var saveTransactionFunction = function(request, response, userId, newTransaction){
 //   databaseHelper.storeData(userId, newTransaction).then(
@@ -155,7 +174,7 @@ skillService.intent('SaveTransactionIntent', {},
   function(request, response) {
   var userId = 'jacob';
   var paymentAmount = 50;
-  var newTransaction = new Transaction(userId, paymentAmount);
+  //var newTransaction = new Transaction(userId, paymentAmount);
 
   //databaseHelper.storeData(userId, newTransaction).then(
     //return false;
