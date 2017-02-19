@@ -1,4 +1,14 @@
 PaymentIntent pay {NAME}
 PaymentIntent {AMOUNT} dollars
 PaymentIntent transfer money
-SaveTransactionIntent save transaction
+PaymentIntent transfer {AMOUNT} dollars to {NAME}
+PaymentIntent send {AMOUNT} dollars to {NAME}
+PaymentIntent pay {AMOUNT} dollars to {NAME}
+PaymentIntent give {AMOUNT} dollars to {NAME}
+MaxPayIntent set max pay limit to {LIMIT} dollars 
+MaxPayIntent set max transfer limit to {LIMIT} dollars
+RecentTransferIntent what was my last payment
+RecentTransferIntent what was my most recent payment
+RecentTransferIntent what was my last transfer
+RecentTransferIntent what was my most recent transfer
+VerificationIntent {PIN} enter
