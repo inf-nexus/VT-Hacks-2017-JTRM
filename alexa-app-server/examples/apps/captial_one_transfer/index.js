@@ -5,6 +5,7 @@ var request = require('superagent');
 
 var apikey = 'b7b749abc5269fb91882402aad541b37';
 var myCustomerID = '56c66be6a73e492741507f63';
+var maxLimit = 25;
 
 // Allow this module to be reloaded by hotswap when changed
 module.change_code = 1;
@@ -42,18 +43,20 @@ skillService.intent('AMAZON.HelpIntent',{},
 
 
 app.intent('PaymentIntent', {
-    "slots": { "FNAME": "LITERAL", "LNAME": "LITERAL", "AMOUNT": "NUMBER" },
+    "slots": { "NAME": "AMAZON.F", "LNAME": "LITERAL", "AMOUNT": "NUMBER" },
     "utterances": ["{Pay first name|Transfer first name |Send first name } {FNAME} {last name} {LNAME} {AMOUNT}{ dollars| bucks}"]
 }, function(req, res) {
-    res.say('Transfering ' + req.slot('FNAME') + ' ' + req.slot('AMOUNT') + ' dollars');
-    makeTransfer(req.slot('FNAME'), req.slot('LNAME'), 0.01);
+    res.say('Transfering ' + req.slot('NAME') + ' ' + req.slot('AMOUNT') + ' dollars');
+    makeTransfer(req.slot('FNAME'), '', 0.01);
 });
 
-app.intent('TransferAmounts', { 
-  "slots": { "NAME": "LITERAL"},
-  "utterances": ["{How much have I transfered |paid |sent } {NAME}"]
+app.intent('MaxPay', { 
+  "slots": { "LIMIT": "AMAZON.NUMBER"},
+  "utterances": ["{Set max pay limit |transfer limit } {LIMIT}"]
 }, function(req, res) {
-  res.say('In progress ...');
+  maxLimit = req.slot('LIMIT');
+  res.say('Maximum limit increased to ' + req.slot('LIMIT'));
+  console.log('new limit: ' + maxLimit);
 });
 
 function makeTransfer(firstName, lastName, amount) {
