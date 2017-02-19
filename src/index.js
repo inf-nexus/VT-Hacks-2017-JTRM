@@ -117,15 +117,15 @@ var paymentIntentFunction = function(dataHelper, request, response){
   var paymentAmount = request.slot('AMOUNT');
   dataHelper.started = true;
 
-  if(userId && paymentAmount){
-    console.log('userid is '+ userId);
-    console.log('paymentAmount is ' + paymentAmount);
-    console.log('in one liner response');
-    dataHelper.currentStep++;
-    //dataHelper.currentStep += 2;
-    //console.log('completed is ' + )
-
-  }
+  // if(userId && paymentAmount){
+  //   console.log('userid is '+ userId);
+  //   console.log('paymentAmount is ' + paymentAmount);
+  //   console.log('in one liner response');
+  //   dataHelper.currentStep++;
+  //   //dataHelper.currentStep += 2;
+  //   //console.log('completed is ' + )
+  //
+  // }
 
   if(userId !== undefined){
     dataHelper.getStep().value = userId;
