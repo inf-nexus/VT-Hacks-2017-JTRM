@@ -16,7 +16,7 @@ DatabaseHelperMock.prototype.dbTestEnvironmentSetup = function() {
   var user1 = new user('Jacob jacob', 'Jacob Contreras');
   var user2 = new user('Rohan rohan', 'Rohan Rane');
   var user3 = new user('Timmy timmy', 'Timmy Tran');
-  var user4 = new user('Matt matt', 'Matt Blumen');
+  var user4 = new user('Matt matt', 'Matthew Blumen');
   this.users.push(user1);
   this.users.push(user2);
   this.users.push(user3);
