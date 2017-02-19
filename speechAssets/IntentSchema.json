@@ -27,8 +27,25 @@
       ]
     },
     {
-      "intent" : "SaveTransactionIntent",
+      "intent" : "MaxPayIntent",
+      "slots" : [
+        {
+          "name": "LIMIT",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent" : "RecentTransferIntent",
       "slots" : []
+    },
+    {
+      "intent" : "VerificationIntent",
+      "slots" : [{
+          "name": "PIN",
+          "type": "AMAZON.FOUR_DIGIT_NUMBER"
+        }
+      ]
     }
   ]
 }

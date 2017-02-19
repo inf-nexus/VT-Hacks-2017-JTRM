@@ -30,7 +30,6 @@ DatabaseHelper.prototype.storeData = function(userId, data){
       reject(ex);
     }
   }, reject);
-    //console.log(err);
   });
 
 };

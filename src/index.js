@@ -1,37 +1,27 @@
 'use strict';
-//var Alexa = require('alexa-sdk');
-//module.change_code = 1;
-//var requestPromise = require('request-promise');
-//var requestPromise = require('minimal-request-promise');
-//var ENDPOINT = "http://ec2-35-161-84-87.us-west-2.compute.amazonaws.com/matthewblumen/home.html";
-
-
 var Alexa = require('alexa-app');
 var skillService = new Alexa.app('capitalOneP2PTransfer');
 const AWS = require('aws-sdk');
-//var _ = require('lodash');
+
 var appId = 'amzn1.ask.skill.f6116fb0-3213-4020-9e12-7cec70174fcc';
+
+var ajax = require('superagent');
+
+var apikey = 'b7b749abc5269fb91882402aad541b37';
+var myAccountID = '58a91e7e1756fc834d9055ed';
 
 const USERID = 'Jacob'; //who you are in the database
 const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
-
-var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
-var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
-
-
+var recentTransfer = [];
+var correctPinEntered;
+var maxLimit = 25;
 
 var _ = require('lodash');
-//var localDBStorage = []; //will be populated by dynamodb
+
 var DataHelper = require('./data_helper');
 var DATA_HELPER_SESSION_KEY = 'data_session';
-var DatabaseHelper = require('./database_helper');
-var databaseHelper = new DatabaseHelper();
-
 var DatabaseHelperMock = require('./database_helper_mock');
 var databaseHelperMock = new DatabaseHelperMock();
-//databaseHelperMock.dbTestEnvironmentSetup();
-
-//console.log('fullname is ' + databaseHelperMock.getFullName('matt'));
 
 function transaction(recipientid, paymentType, paymentAmount){
   this.recipientid = recipientid;
@@ -40,24 +30,22 @@ function transaction(recipientid, paymentType, paymentAmount){
 }
 
 var getDataHelper = function(dataHelperData){
-
   if(dataHelperData === undefined){
     dataHelperData = {};
   }
+
   return new DataHelper(dataHelperData);
 };
 
 var reprompt = "I didn't hear what you said could you repeat that.";
-skillService.launch(function(request, response){
-  var prompt = 'Welcome to Capital One P2P Transfer' +
-  'You can either transfer money or request money.';
-    //console.log('here in skillService launch');
+skillService.launch(function(request, response) {
+  var prompt = 'Welcome to Capital One P2P Transfer ' +
+  'Please enter your pin to continue';
+  correctPinEntered = false;
   response.say(prompt).reprompt(reprompt).shouldEndSession(false);
-    //console.log('here out of skillService launch');
 });
 
-var cancelIntentFunction = function(request, response){
-
+var cancelIntentFunction = function(request, response) {
   response.say('Closing app. See you later!').shouldEndSession(true);
 };
 
@@ -66,156 +54,221 @@ skillService.intent('AMAZON.StopIntent',{}, cancelIntentFunction);
 
 skillService.intent('AMAZON.HelpIntent',{},
   function(request, response){
-    var help = 'Welcome to Capital One P2P Transfer'
-    + 'To transfer money, say transfer money'
-    + 'To request money, say request money'
+    var help = 'To transfer money, say transfer money'
+    + 'To increase limit, say set max transfer limit to'
     + 'You can also say stop or cancel to exit.';
-    if(dataHelper.started){
-      //help = dataHelper.getStep().help
-      help = 'default help message';
-    }
     response.say(help).shouldEndSession(false);
   });
 
-var getDataHelperFromRequest = function(request){
-    //console.log('here in getDataHelperFromRequest');
+var getDataHelperFromRequest = function(request) {
     var dataHelperData = request.session(DATA_HELPER_SESSION_KEY);
-    //console.log('here out of getDataHelperFromRequest');
     return getDataHelper(dataHelperData);
 };
 
-// var saveDataFunction = function(userId, obj, request, response){
-//   //console.log('in save data');
-//   databaseHelper.storeData(userId, obj).then(
-//     function(result){
-//       return result;
-//     }).catch(function(err){
-//       console.log(err);
-//     });
-//     response.say('you have successfully sent money to ', userId);
-//     response.shouldEndSession(true);
-// }
+skillService.intent('VerificationIntent',{
+  'slots':[{'PIN': 'AMAZON.FOUR_DIGIT_NUMBER'}],
+  'utterances': ['{-|PIN} {enter}']
+},
+function(request,response){
+  var userPin = request.slot('PIN');
+  if(userPin && userPin == '1234'){
+    response.say('Pin confirmed you may proceed').shouldEndSession(false);
+    correctPinEntered = true;
+
+  } else{
+    response.say('Incorrect pin entered').shouldEndSession(false);
+  }
+
+  response.send();
+});
 
 skillService.intent('PaymentIntent',{
   'slots':[{'NAME': 'AMAZON.US_FIRST_NAME'},{'AMOUNT': 'AMAZON.NUMBER'}],
   'utterances': ['{pay} {-|NAME}','{-|AMOUNT} {dollars}',
-  '{transfer} {-|AMOUNT} {dollars to} {-|NAME}']
-  //'utterances': ['{|give} {|me} {|data} {|on} {-|QUERY_LIST}']
-  //'utterances': ['{new|start|create|begin|build} {|a|the} madlib', {'-QUERY_LIST'}]
-},
-function(request, response){
+  '{transfer |send |give |pay} {-|AMOUNT} {dollars to} {-|NAME}']
+}, function(request, response){
+      var helper = paymentIntentFunction(getDataHelperFromRequest(request),request, response);
+      var tempname = databaseHelperMock.getFullName(helper.userid);
+      var name;
+      if(!tempname){
+        response.say('invalid name').shouldEndSession(true);
+      }else{
+        name = tempname.split(" ");
+      }
 
-      paymentIntentFunction(getDataHelperFromRequest(request),request, response);
-      //var requestCompleted = false;
-      //paymentIntentFunction(requestCompleted, request, response);
+      var firstName = name[0];
+      var lastName = name[1];
+      var amount = parseInt(helper.paymentAmount, 10);
+
+      var newTransaction = new transaction(helper.userid, 'payment', helper.paymentAmount);
+
+      var cid;
+      var aid;
+
+      var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey);
+      return ajax.get(getCustomersUrl).then(res => {
+        for(var i in res.body) {
+          if(res.body[i].first_name === firstName && res.body[i].last_name === lastName) {
+            console.log('Customer ID: ' + res.body[i]._id);
+            cid = res.body[i]._id;
+            break;
+          }
+        }
+
+        if (cid === undefined) {
+          response.say('Could not find a customer with name ' + firstName + ' ' + lastName);
+          response.shouldEndSession(true).send();
+          return;
+        }
+
+        var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(cid).concat('/accounts?key=').concat(apikey);
+        return ajax.get(getAccountsUrl).then(res => {
+          for(var i in res.body) {
+            if(res.body[i].type === 'Checking') {
+              console.log('Account ID: ' + res.body[i]._id);
+              aid = res.body[i]._id;
+              break;
+            }
+          }
+
+          if (aid === undefined) {
+            response.say('Could not find a checking account associated with ' + firstName + ' ' + lastName)
+            response.shouldEndSession(true).send();
+            return;
+          }
+
+          var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myAccountID).concat('/transfers?key=').concat(apikey)
+            return ajax
+            .post(postTransfersUrl)
+            .set('Content-Type', 'application/json')
+            .send({
+              "medium": "balance",
+              "payee_id": aid,
+              "amount": amount,
+              "transaction_date": getDate(),
+              "description": "transfer_test"
+            })
+            .then(res => {
+              console.log(res.status);
+              console.log(res.body);
+              if (res.status === 201) {
+                saveTransactionFunction(request, response, helper, newTransaction);
+              }
+            });
+        });
+    });
   }
 );
 
+skillService.intent('MaxPayIntent', {
+  "slots": { "LIMIT": "AMAZON.NUMBER"},
+  "utterances": ["{Set max pay limit to |Set max transfer limit to} {LIMIT} {dollars}"]
+}, function(request, response) {
+  if (!correctPinEntered) {
+    response.say('Please enter correct pin to proceed').shouldEndSession(false);
+    response.send();
+  }
+  else {
+    maxLimit = request.slot('LIMIT');
+    response.say('Maximum limit set to ' + maxLimit + ' dollars').shouldEndSession(false);
+  }
+});
+
+skillService.intent('RecentTransferIntent', {
+  "slots": {},
+  "utterances": ["{What was my } {last payment | most recent payment | last transfer | most recent transfer}"]
+}, function(request, response) {
+  if (!correctPinEntered) {
+    response.say('Please enter correct pin to proceed').shouldEndSession(false);
+    response.send();
+  }
+  else {
+    if (recentTransfer.length === 0) {
+      response.say('You no have no recent transfers');
+    }
+    else {
+      response.say('Last transfer was ' + recentTransfer[1] + ' dollars to ' + recentTransfer[0] + ' on ' + recentTransfer[2]).shouldEndSession(false);
+    }
+  }
+});
+
 var paymentIntentFunction = function(dataHelper, request, response){
-  //var requestCompleted = false;
+  if (!correctPinEntered) {
+    response.say('Please enter correct pin to proceed').shouldEndSession(false);
+    response.send();
+  }
+
   var userId = request.slot('NAME');
   var paymentAmount = request.slot('AMOUNT');
+
   dataHelper.started = true;
-
-  if(userId && paymentAmount){
-    console.log('userid is '+ userId);
-    console.log('paymentAmount is ' + paymentAmount);
-    console.log('in one liner response');
+  if (correctPinEntered && userId && paymentAmount) {
     dataHelper.currentStep++;
-    //dataHelper.currentStep += 2;
-    //console.log('completed is ' + )
-
   }
 
-  if(userId !== undefined){
+  if (correctPinEntered && userId !== undefined) {
     dataHelper.getStep().value = userId;
     dataHelper.userid = userId;
-    //dataHelper.currentStep++;
   }
 
-  if(paymentAmount !== undefined){
+  if (correctPinEntered && paymentAmount !== undefined) {
     dataHelper.getStep().value = paymentAmount;
     dataHelper.paymentAmount = paymentAmount;
-    //dataHelper.currentStep++;
+
+    if (correctPinEntered && dataHelper.paymentAmount > maxLimit) {
+      response.say('Amount entered exceeds max limit of ' + maxLimit + ' dollars. '
+      + 'Please try agian');
+      response.shouldEndSession(true).send();
+    }
   }
 
-  if(dataHelper.completed()){
-    console.log('in completed step');
-    var newTransaction = new transaction(dataHelper.userid, 'payment', dataHelper.paymentAmount);
-    var success = saveTransactionFunction(request, response, dataHelper, newTransaction);
+  if (correctPinEntered && dataHelper.completed()) {
+    return dataHelper;
 
-  }else{
-
-    if(userId !== undefined || paymentAmount !== undefined){
-      //console.log('incrementing step');
+  } else {
+    if (correctPinEntered && (userId !== undefined || paymentAmount !== undefined)) {
       dataHelper.currentStep++;
     }
-    //console.log('here');
-    if(dataHelper.currentStep < 2){
-    response.say(dataHelper.getPrompt());
-  }
+
+    if (correctPinEntered && dataHelper.currentStep < 2) {
+      response.say(dataHelper.getPrompt());
+    }
+
     response.reprompt("I didn't hear anything");
     response.shouldEndSession(false);
   }
+
   response.session(DATA_HELPER_SESSION_KEY, dataHelper);
   response.send();
 };
 
 var saveTransactionFunction = function(request, response, dataHelper, newTransaction){
-  //var success = databaseHelperMock.storeData(userId, newTransaction);
-  //var newTransaction = new transaction()
-  console.log('userid is: ' + newTransaction.recipientid);
-  console.log('fullname of recipient is: ' + databaseHelperMock.getFullName(dataHelper.userid));
-
   var success = databaseHelperMock.updateTransactionHistory(USERID, newTransaction);
-  if(success){
-    response.say('your transaction has successfully been completed');
-    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userid);
-  }else{
-    response.say('your transaction was unsuccessful');
+  if (success) {
+    recentTransfer = [dataHelper.userid, dataHelper.paymentAmount, getDate()];
+    response.say('Your transaction has saved successfully.');
+    response.say('You sent ' + dataHelper.paymentAmount + ' dollars to ' + dataHelper.userid);
+  } else {
+    response.say('Your transaction was not saved unsuccessful');
   }
+
   response.shouldEndSession(true).send();
   return success;
 }
 
-// var saveTransactionFunction = function(request, response, userId, newTransaction){
-//   databaseHelper.storeData(userId, newTransaction).then(
-//     function(result) {
-//       return result;
-//     }).catch(function(error) {});
-//   response.say(
-//     'Your transaction has been saved.'
-//   );
-//   response.shouldEndSession(true).send();
-//   return false;
-// }
+function getDate() {
+  var today = new Date();
+  var dd = today.getDate();
+  var mm = today.getMonth()+1;
 
-skillService.intent('SaveTransactionIntent', {},function(request, response) {
-  console.log('in save transaction intent');
-  //var userId = 'jacob';
-  //var paymentAmount = 50;
+  var yyyy = today.getFullYear();
+  if(dd<10){
+    dd='0'+dd;
+  }
+  if(mm<10){
+    mm='0'+mm;
+  }
+  return yyyy + '-' + mm + '-' + dd;
+}
 
-  var params = {
-    TableName: 'hokieCalandarTable',
-    Item: {
-        userid: 'jacob',
-        paymentAmount: 50
-    }
-  };
-  docClient.put(params, function(err, data){
-    console.log('in docClient put');
-    if(err){
-      console.log(err);
-    }else{
-      console.log(data);
-    }
-  });
-  console.log('out of save transaction intent');
-  //var newTransaction = new Transaction(userId, paymentAmount);
-
-  //databaseHelper.storeData(userId, newTransaction).then(
-    //return false;
-
-  });
-
- module.exports = skillService;
+module.exports = skillService;
