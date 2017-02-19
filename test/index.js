@@ -2,7 +2,7 @@ var request = require('superagent');
 
 var apikey = 'b7b749abc5269fb91882402aad541b37';
 
-var myCustomerID = '56c66be6a73e492741507f63';
+var myAccountID = '56c66be6a73e492741507f63';
 
 /*request
   .post('http://api.reimaginebanking.com/customers?key=1e28a437bbeb9528ba382435b7e2abe1')
@@ -44,17 +44,15 @@ request
     }
 });*/
 
-getCustomer(customerHandler, 'John', 'Boyer');
-
-function getCustomer(callback, firstName, lastName) {
+function makeTransfer(callback, firstName, lastName, amount) {
   var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey); 
   request.get(getCustomersUrl).end(function(err, res) {
         if (err) console.log(err.body);
-        callback(res.body, firstName, lastName);
+        callback(res.body, firstName, lastNamem, amount);
       });
 }
 
-function customerHandler(result, firstName, lastName) {
+function customerHandler(result, firstName, lastName, amount) {
   var cid;
   for(var i in result) {                    
     if(result[i].first_name === firstName && result[i].last_name === lastName) {
@@ -63,46 +61,52 @@ function customerHandler(result, firstName, lastName) {
         break;
     }
   }
+
+  getAccount(accountHandler, cid, amount);
 }
 
-function getAccount(callback, customerID) {
+function getAccount(callback, customerID, amount) {
   var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(customerID).concat('/accounts?key=').concat(apikey); 
     request.get(getAccountsUrl).end(function(err, res) {
         if (err) console.log(err.body);
-        callback(res.body);
+        callback(res.body, amount);
       });
 }
 
-function accountHandler(result) {
+function accountHandler(result, amount) {
+  var aid;
   for(var i in result) {                    
     if(result[i].type === 'Checking') {
         console.log('Account ID: ' + result[i]._id);
+        aid = result[i]._id;
         break;
     }
   }
+
+  transfers(myAccountID, aid, amount);
 }
 
 //getAccount(accountHandler, '56c66be5a73e492741507429');
 
-function transfers(senderAccountID, recieverAccountID, amount) {
-  var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(senderAccountID).concat('/transfers?key=').concat(apikey)
+function transfers(fromID, sendID, amount) {
+  var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myAccountID).concat('/transfers?key=').concat(apikey)
   request
-    .post(postTransfersUrl)
-    .set('Content-Type', 'application/json')
-    .send({
-      "medium": "balance",
-      "payee_id": recieverAccountID,
-      "amount": amount,
-      "transaction_date": getDate(),
-      "description": "transfer_test"
-    })
-    .end(function(err, res) {
-      if (err) console.log(err);
-      console.log(res.status);
-      console.log(res.body);
-      return true;
-    });
+  .post(postTransfersUrl)
+  .set('Content-Type', 'application/json')
+  .send({
+    "medium": "balance",
+    "payee_id": aid,
+    "amount": amount,
+    "transaction_date": getDate(),
+    "description": "transfer_test"
+  })
+  .end(function(err, res) {
+    if (err) console.log(err);
+    console.log(res.status);
+    console.log(res.body);
+  });
 }
+
 
 function getDate() {
   var today = new Date();
@@ -126,7 +130,11 @@ function makeTransfer(firstName, lastName, amount) {
 
   var getCustomersUrl = 'http://api.reimaginebanking.com/customers/?key='.concat(apikey); 
   request.get(getCustomersUrl).end(function(err, res) {
-        if (err) console.log(err.body);
+        if (err) {
+          console.log(err.body);
+          console.log('Could not find customer to transfer money to');
+        }
+
         for(var i in res.body) {                    
           if(res.body[i].first_name === firstName && res.body[i].last_name === lastName) {
             console.log('Customer ID: ' + res.body[i]._id);
@@ -134,9 +142,19 @@ function makeTransfer(firstName, lastName, amount) {
             break;
           }
         }
+
+        if (cid === undefined) {
+          console.log('Could not find a customer with name ' + firstName + ' ' + lastName);
+          return;
+        }
+
           var getAccountsUrl = 'http://api.reimaginebanking.com/customers/'.concat(cid).concat('/accounts?key=').concat(apikey); 
           request.get(getAccountsUrl).end(function(err, res) {
-          if (err) console.log(err.body);
+          if (err) {
+            //console.log(err.body);
+            console.log('Could not find a valid account');
+          }
+
           for(var i in res.body) {                    
             if(res.body[i].type === 'Checking') {
               console.log('Account ID: ' + res.body[i]._id);
@@ -144,7 +162,12 @@ function makeTransfer(firstName, lastName, amount) {
               break;
             }
           }
-            var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myCustomerID).concat('/transfers?key=').concat(apikey)
+
+          if (aid === undefined) {
+            console.log('Could not find a checking account associated with ' + firstName + ' ' + lastName);
+            return;
+          }
+            var postTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myAccountID).concat('/transfers?key=').concat(apikey)
             request
             .post(postTransfersUrl)
             .set('Content-Type', 'application/json')
@@ -156,7 +179,10 @@ function makeTransfer(firstName, lastName, amount) {
               "description": "transfer_test"
             })
             .end(function(err, res) {
-              if (err) console.log(err);
+              if (err) {
+                //console.log(err);
+                console.log('Transfer failed');
+              }
               console.log(res.status);
               console.log(res.body);
             });
@@ -164,4 +190,36 @@ function makeTransfer(firstName, lastName, amount) {
       });
 }
 
-makeTransfer('David', 'Tennant', 0.01);
+//makeTransfer('David', 'Tennant', 0.01);
+
+function getLastTransfer() {    
+  var lastTransfer;
+  var getTransfersUrl = 'http://api.reimaginebanking.com/accounts/'.concat(myAccountID).concat('/transfers?key=').concat(apikey)
+  request
+  .get(getTransfersUrl)
+  .end(function(err, res) {
+    if (err) console.log(err);
+    console.log(res.status);
+    for (var i=res.body.length-1; i>=0; i--) {
+        if (res.body[i].payer_id === myAccountID) {
+            lastTransfer = res.body[i];
+            break;
+        }
+    }
+
+    if (lastTransfer === undefined) {
+        console.log('No last transaction was found');
+    }
+
+    var getAccountsUrl = 'http://api.reimaginebanking.com/accounts/key='.concat(apikey); 
+    request
+    .get(getAccountsUrl)
+    .end(function(err, res)) {
+        if (err) console.log(err);
+        console.log(res.status);
+    }
+  });
+}
+
+makeTransfer('John', 'Boyer', 1.00);
+//getLastTransfer();
