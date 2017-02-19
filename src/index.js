@@ -212,7 +212,7 @@ var paymentIntentFunction = function(dataHelper, request, response){
     if (correctPinEntered && dataHelper.paymentAmount > maxLimit) {
       response.say('Amount entered exceeds max limit of ' + maxLimit + ' dollars. ' 
       + 'Please try agian');
-      response.shouldEndSession(false).send();
+      response.shouldEndSession(true).send();
     }
   }
 
