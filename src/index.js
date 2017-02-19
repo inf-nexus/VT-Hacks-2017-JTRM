@@ -70,14 +70,12 @@ skillService.intent('VerificationIntent',{
   'utterances': ['{-|PIN} {enter}']
 },
 function(request,response){
-  console.log('here');
   var userPin = request.slot('PIN');
-  console.log('here2');
   if(userPin && userPin == '1234'){
     response.say('Pin confirmed you may proceed').shouldEndSession(false);
     correctPinEntered = true;
 
-  }else{
+  } else{
     response.say('Incorrect pin entered').shouldEndSession(false);
   }
 
