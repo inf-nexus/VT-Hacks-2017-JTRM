@@ -1,6 +1,11 @@
 'use strict';
 //var Alexa = require('alexa-sdk');
 //module.change_code = 1;
+//var requestPromise = require('request-promise');
+//var requestPromise = require('minimal-request-promise');
+//var ENDPOINT = "http://ec2-35-161-84-87.us-west-2.compute.amazonaws.com/matthewblumen/home.html";
+
+
 var Alexa = require('alexa-app');
 var skillService = new Alexa.app('capitalOneP2PTransfer');
 const AWS = require('aws-sdk');
@@ -10,8 +15,8 @@ var appId = 'amzn1.ask.skill.f6116fb0-3213-4020-9e12-7cec70174fcc';
 const USERID = 'Jacob'; //who you are in the database
 const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
 
-//var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
-//var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
+var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
+var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
 
 
 
@@ -93,7 +98,8 @@ var getDataHelperFromRequest = function(request){
 
 skillService.intent('PaymentIntent',{
   'slots':[{'NAME': 'AMAZON.US_FIRST_NAME'},{'AMOUNT': 'AMAZON.NUMBER'}],
-  'utterances': ['{pay} {-|NAME}','{-|AMOUNT} {dollars}']
+  'utterances': ['{pay} {-|NAME}','{-|AMOUNT} {dollars}',
+  '{transfer} {-|AMOUNT} {dollars to} {-|NAME}']
   //'utterances': ['{|give} {|me} {|data} {|on} {-|QUERY_LIST}']
   //'utterances': ['{new|start|create|begin|build} {|a|the} madlib', {'-QUERY_LIST'}]
 },
@@ -109,8 +115,18 @@ var paymentIntentFunction = function(dataHelper, request, response){
   //var requestCompleted = false;
   var userId = request.slot('NAME');
   var paymentAmount = request.slot('AMOUNT');
-
   dataHelper.started = true;
+
+  if(userId && paymentAmount){
+    console.log('userid is '+ userId);
+    console.log('paymentAmount is ' + paymentAmount);
+    console.log('in one liner response');
+    dataHelper.currentStep++;
+    //dataHelper.currentStep += 2;
+    //console.log('completed is ' + )
+
+  }
+
   if(userId !== undefined){
     dataHelper.getStep().value = userId;
     dataHelper.userid = userId;
@@ -126,9 +142,7 @@ var paymentIntentFunction = function(dataHelper, request, response){
   if(dataHelper.completed()){
     console.log('in completed step');
     var newTransaction = new transaction(dataHelper.userid, 'payment', dataHelper.paymentAmount);
-    saveTransactionFunction(request, response, dataHelper, newTransaction);
-    //saveDataFunction(userId, newTransaction, request, response);
-    //response.shouldEndSession(true);
+    var success = saveTransactionFunction(request, response, dataHelper, newTransaction);
 
   }else{
 
@@ -176,16 +190,32 @@ var saveTransactionFunction = function(request, response, dataHelper, newTransac
 //   return false;
 // }
 
-skillService.intent('SaveTransactionIntent', {},
-  function(request, response) {
-  var userId = 'jacob';
-  var paymentAmount = 50;
+skillService.intent('SaveTransactionIntent', {},function(request, response) {
+  console.log('in save transaction intent');
+  //var userId = 'jacob';
+  //var paymentAmount = 50;
+
+  var params = {
+    TableName: 'hokieCalandarTable',
+    Item: {
+        userid: 'jacob',
+        paymentAmount: 50
+    }
+  };
+  docClient.put(params, function(err, data){
+    console.log('in docClient put');
+    if(err){
+      console.log(err);
+    }else{
+      console.log(data);
+    }
+  });
+  console.log('out of save transaction intent');
   //var newTransaction = new Transaction(userId, paymentAmount);
 
   //databaseHelper.storeData(userId, newTransaction).then(
     //return false;
 
-  }
-);
+  });
 
  module.exports = skillService;

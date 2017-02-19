@@ -9,6 +9,7 @@ function DataHelper(obj){
   this.userid = null;
   this.paymentAmount = null;
   this.interactionIndex = 0;
+  this.finished = false;
   //this.database = [];
   this.interactions = [
     {
