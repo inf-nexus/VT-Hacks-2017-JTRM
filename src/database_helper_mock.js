@@ -12,7 +12,6 @@ function DatabaseHelperMock() {
 }
 
 DatabaseHelperMock.prototype.dbTestEnvironmentSetup = function() {
-  //console.log('starting database helper mock');
   var user1 = new user('Jacob Jake', 'Jacob Contreras');
   var user2 = new user('Rohan', 'Rohan Rane');
   var user3 = new user('Timmy Tim Timothy', 'Timothy Tran');
@@ -21,14 +20,10 @@ DatabaseHelperMock.prototype.dbTestEnvironmentSetup = function() {
   this.users.push(user2);
   this.users.push(user3);
   this.users.push(user4);
-    //console.log('finished database helper mock');
-
 }
 
 DatabaseHelperMock.prototype.getFullName = function(userID) {
-console.log('users length is ' + this.users.length);
 	for (var i = 0; i < this.users.length; i++) {
-    //console.log(this.users[i].name);
 		if (this.users[i].name.includes(userID)) {
 			return this.users[i].fullname;
 		}
@@ -42,11 +37,9 @@ DatabaseHelperMock.prototype.updateTransactionHistory = function(userID, transac
     if(!recipientFullName){
       return false;
     }
-    //console.log('in update history, recipient is ' + recipientid);
 
     for (var i = 0; i < this.users.length; i++) {
   		if (this.users[i].name.includes(userID)) {
-  			//console.log('found user in db ' + userID);
         this.users[i].transactionHistory.push(transaction);
         return true;
   		}
