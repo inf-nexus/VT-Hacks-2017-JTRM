@@ -12,36 +12,46 @@ function DatabaseHelperMock() {
 }
 
 DatabaseHelperMock.prototype.dbTestEnvironmentSetup = function() {
-      console.log('starting database helper mock');
-
-  var user1 = new user('Jacob', 'Jacob Contreras');
-  var user2 = new user('Rohan', 'Rohan Rane');
-  var user3 = new user('Timmy', 'Timmy Tran');
-  var user4 = new user('Matt', 'Matt Blumen');
+  //console.log('starting database helper mock');
+  var user1 = new user('Jacob jacob', 'Jacob Contreras');
+  var user2 = new user('Rohan rohan', 'Rohan Rane');
+  var user3 = new user('Timmy timmy', 'Timmy Tran');
+  var user4 = new user('Matt matt', 'Matt Blumen');
   this.users.push(user1);
   this.users.push(user2);
   this.users.push(user3);
   this.users.push(user4);
-    console.log('finished database helper mock');
+    //console.log('finished database helper mock');
 
 }
 
 DatabaseHelperMock.prototype.getFullName = function(userID) {
-	for (var i = 0; i < users.length; i++) {
+console.log('users length is ' + this.users.length);
+	for (var i = 0; i < this.users.length; i++) {
+    //console.log(this.users[i].name);
 		if (this.users[i].name.includes(userID)) {
-			return this.users[i].fullName;
+			return this.users[i].fullname;
 		}
 	}
 }
 
-DatabaseHelperMock.prototype.updateTransactionHistory = function(userID, obj){
+DatabaseHelperMock.prototype.updateTransactionHistory = function(userID, transaction){
+
+    var recipientid = transaction.recipientid;
+    var recipientFullName = this.getFullName(recipientid);
+    if(!recipientFullName){
+      return false;
+    }
+    //console.log('in update history, recipient is ' + recipientid);
+
     for (var i = 0; i < this.users.length; i++) {
   		if (this.users[i].name.includes(userID)) {
-  			//return this.users[i].fullName;
-        this.users[i].transactionHistory.push(obj);
+  			//console.log('found user in db ' + userID);
+        this.users[i].transactionHistory.push(transaction);
         return true;
   		}
   	}
+
     return false;
 }
 
@@ -67,7 +77,7 @@ DatabaseHelperMock.prototype.readData = function(userID) {
 	var fullName = this.getFullName(userID);
 	for (var i = 0; i < this.users.length; i++) {
 		if (this.users[i].fullName == fullName) {
-			return users[i];
+			return this.users[i];
 		}
 	}
 }

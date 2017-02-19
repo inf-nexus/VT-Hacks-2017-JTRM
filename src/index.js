@@ -8,7 +8,7 @@ const AWS = require('aws-sdk');
 var appId = 'amzn1.ask.skill.f6116fb0-3213-4020-9e12-7cec70174fcc';
 
 const USERID = 'Jacob'; //who you are in the database
-//const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
+const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
 
 //var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
 //var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
@@ -24,9 +24,12 @@ var databaseHelper = new DatabaseHelper();
 
 var DatabaseHelperMock = require('./database_helper_mock');
 var databaseHelperMock = new DatabaseHelperMock();
+//databaseHelperMock.dbTestEnvironmentSetup();
 
-function transaction(recipentid, paymentType, paymentAmount){
-  this.recipentid = recipentid;
+//console.log('fullname is ' + databaseHelperMock.getFullName('matt'));
+
+function transaction(recipientid, paymentType, paymentAmount){
+  this.recipientid = recipientid;
   this.paymentType = paymentType;
   this.paymentAmount = paymentAmount;
 }
@@ -110,7 +113,7 @@ var paymentIntentFunction = function(dataHelper, request, response){
   dataHelper.started = true;
   if(userId !== undefined){
     dataHelper.getStep().value = userId;
-    dataHelper.userId = userId;
+    dataHelper.userid = userId;
     //dataHelper.currentStep++;
   }
 
@@ -122,7 +125,7 @@ var paymentIntentFunction = function(dataHelper, request, response){
 
   if(dataHelper.completed()){
     console.log('in completed step');
-    var newTransaction = new transaction(dataHelper.userId, 'payment', dataHelper.paymentAmount);
+    var newTransaction = new transaction(dataHelper.userid, 'payment', dataHelper.paymentAmount);
     saveTransactionFunction(request, response, dataHelper, newTransaction);
     //saveDataFunction(userId, newTransaction, request, response);
     //response.shouldEndSession(true);
@@ -147,10 +150,13 @@ var paymentIntentFunction = function(dataHelper, request, response){
 var saveTransactionFunction = function(request, response, dataHelper, newTransaction){
   //var success = databaseHelperMock.storeData(userId, newTransaction);
   //var newTransaction = new transaction()
+  console.log('userid is: ' + newTransaction.recipientid);
+  console.log('fullname of recipient is: ' + databaseHelperMock.getFullName(dataHelper.userid));
+
   var success = databaseHelperMock.updateTransactionHistory(USERID, newTransaction);
   if(success){
     response.say('your transaction has successfully been completed');
-    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userId);
+    response.say('you sent ' + dataHelper.paymentAmount + 'dollars to ' + dataHelper.userid);
   }else{
     response.say('your transaction was unsuccessful');
   }
