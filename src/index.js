@@ -164,7 +164,7 @@ skillService.intent('MaxPayIntent', {
   }
   else {
     maxLimit = request.slot('LIMIT');
-    response.say('Maximum limit set to ' + maxLimit + ' dollars');
+    response.say('Maximum limit set to ' + maxLimit + ' dollars').shouldEndSession(false);
   }
 });
 
@@ -181,7 +181,7 @@ skillService.intent('RecentTransferIntent', {
       response.say('You no have no recent transfers');
     }
     else {
-      response.say('Last transfer was ' + recentTransfer[1] + ' dollars to ' + recentTransfer[0] + ' on ' + recentTransfer[2]);
+      response.say('Last transfer was ' + recentTransfer[1] + ' dollars to ' + recentTransfer[0] + ' on ' + recentTransfer[2]).shouldEndSession(false);
     }
   }
 });
@@ -212,7 +212,7 @@ var paymentIntentFunction = function(dataHelper, request, response){
     if (correctPinEntered && dataHelper.paymentAmount > maxLimit) {
       response.say('Amount entered exceeds max limit of ' + maxLimit + ' dollars. ' 
       + 'Please try agian');
-      response.shouldEndSession(true).send();
+      response.shouldEndSession(false).send();
     }
   }
 
