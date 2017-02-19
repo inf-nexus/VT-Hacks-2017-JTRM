@@ -1,5 +1,11 @@
 PaymentIntent pay {NAME}
+PaymentIntent {NAME}
+PaymentIntent give money to {NAME}
+PaymentIntent pay {AMOUNT} to {NAME}
 PaymentIntent {AMOUNT} dollars
 PaymentIntent transfer money
 PaymentIntent transfer {AMOUNT} dollars to {NAME}
+
+VerificationIntent {PIN} enter
+
 SaveTransactionIntent save transaction

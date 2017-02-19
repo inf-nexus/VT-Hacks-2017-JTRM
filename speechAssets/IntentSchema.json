@@ -5,6 +5,15 @@
       "slots": []
     },
     {
+      "intent": "VerificationIntent",
+      "slots": [
+        {
+          "name": "PIN",
+          "type": "AMAZON.FOUR_DIGIT_NUMBER"
+        }
+      ]
+    },
+    {
       "intent": "AMAZON.StopIntent",
       "slots": []
     },
@@ -23,7 +32,6 @@
           "name": "AMOUNT",
           "type": "AMAZON.NUMBER"
         }
-
       ]
     },
     {

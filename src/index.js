@@ -1,16 +1,14 @@
+
 'use strict';
-//var Alexa = require('alexa-sdk');
-//module.change_code = 1;
-//var requestPromise = require('request-promise');
-//var requestPromise = require('minimal-request-promise');
-//var ENDPOINT = "http://ec2-35-161-84-87.us-west-2.compute.amazonaws.com/matthewblumen/home.html";
 
-
+var twilio = require('twilio');
+var ajax = require('superagent');
 var Alexa = require('alexa-app');
 var skillService = new Alexa.app('capitalOneP2PTransfer');
 const AWS = require('aws-sdk');
 //var _ = require('lodash');
 var appId = 'amzn1.ask.skill.f6116fb0-3213-4020-9e12-7cec70174fcc';
+const demoSiteUrl = "http://ec2-35-161-84-87.us-west-2.compute.amazonaws.com/matthewblumen/home.html";
 
 const USERID = 'Jacob'; //who you are in the database
 const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
@@ -18,6 +16,8 @@ const FRIENDSLIST = ['Rohan', 'Matt', 'Timmy'];
 var dynamodb = new AWS.DynamoDB({region: 'us-east-1'});
 var docClient = new AWS.DynamoDB.DocumentClient({service: dynamodb}); //use to operate on db
 
+var pinNotEneteredMessage = 'Please enter pin to proceed';
+var correctPinEntered;
 
 
 var _ = require('lodash');
@@ -49,8 +49,9 @@ var getDataHelper = function(dataHelperData){
 
 var reprompt = "I didn't hear what you said could you repeat that.";
 skillService.launch(function(request, response){
+  correctPinEntered = false;
   var prompt = 'Welcome to Capital One P2P Transfer' +
-  'You can either transfer money or request money.';
+               'please enter your pin to continue';
     //console.log('here in skillService launch');
   response.say(prompt).reprompt(reprompt).shouldEndSession(false);
     //console.log('here out of skillService launch');
@@ -66,16 +67,16 @@ skillService.intent('AMAZON.StopIntent',{}, cancelIntentFunction);
 
 skillService.intent('AMAZON.HelpIntent',{},
   function(request, response){
-    var help = 'Welcome to Capital One P2P Transfer'
-    + 'To transfer money, say transfer money'
+    var help = 'To transfer money, say transfer money'
     + 'To request money, say request money'
     + 'You can also say stop or cancel to exit.';
-    if(dataHelper.started){
-      //help = dataHelper.getStep().help
-      help = 'default help message';
-    }
+    // if(dataHelper.started){
+    //   //help = dataHelper.getStep().help
+    //   help = 'default help message';
+    // }
     response.say(help).shouldEndSession(false);
   });
+
 
 var getDataHelperFromRequest = function(request){
     //console.log('here in getDataHelperFromRequest');
@@ -96,6 +97,25 @@ var getDataHelperFromRequest = function(request){
 //     response.shouldEndSession(true);
 // }
 
+skillService.intent('VerificationIntent',{
+  'slots':[{'PIN': 'AMAZON.FOUR_DIGIT_NUMBER'}],
+  'utterances': ['{-|PIN} {enter}']
+},
+function(request,response){
+  console.log('here');
+  var userPin = request.slot('PIN');
+  console.log('here2');
+  if(userPin && userPin == '1234'){
+    response.say('Pin confirmed you may proceed').shouldEndSession(false);
+    correctPinEntered = true;
+
+  }else{
+    response.say('Incorrect pin entered').shouldEndSession(false);
+  }
+
+  response.send();
+});
+
 skillService.intent('PaymentIntent',{
   'slots':[{'NAME': 'AMAZON.US_FIRST_NAME'},{'AMOUNT': 'AMAZON.NUMBER'}],
   'utterances': ['{pay} {-|NAME}','{-|AMOUNT} {dollars}',
@@ -104,7 +124,6 @@ skillService.intent('PaymentIntent',{
   //'utterances': ['{new|start|create|begin|build} {|a|the} madlib', {'-QUERY_LIST'}]
 },
 function(request, response){
-
       paymentIntentFunction(getDataHelperFromRequest(request),request, response);
       //var requestCompleted = false;
       //paymentIntentFunction(requestCompleted, request, response);
@@ -112,46 +131,50 @@ function(request, response){
 );
 
 var paymentIntentFunction = function(dataHelper, request, response){
+  if(!correctPinEntered){
+    response.say('please enter correct pin to proceed').shouldEndSession(false);
+    response.send();
+  }
   //var requestCompleted = false;
   var userId = request.slot('NAME');
   var paymentAmount = request.slot('AMOUNT');
   dataHelper.started = true;
 
-  // if(userId && paymentAmount){
-  //   console.log('userid is '+ userId);
-  //   console.log('paymentAmount is ' + paymentAmount);
-  //   console.log('in one liner response');
-  //   dataHelper.currentStep++;
-  //   //dataHelper.currentStep += 2;
-  //   //console.log('completed is ' + )
-  //
-  // }
+  if(correctPinEntered && userId && paymentAmount){
+    console.log('userid is '+ userId);
+    console.log('paymentAmount is ' + paymentAmount);
+    console.log('in one liner response');
+    dataHelper.currentStep++;
+    //dataHelper.currentStep += 2;
+    //console.log('completed is ' + )
 
-  if(userId !== undefined){
+  }
+
+  if(correctPinEntered && userId !== undefined){
     dataHelper.getStep().value = userId;
     dataHelper.userid = userId;
     //dataHelper.currentStep++;
   }
 
-  if(paymentAmount !== undefined){
+  if(correctPinEntered && paymentAmount !== undefined){
     dataHelper.getStep().value = paymentAmount;
     dataHelper.paymentAmount = paymentAmount;
     //dataHelper.currentStep++;
   }
 
-  if(dataHelper.completed()){
+  if(correctPinEntered && dataHelper.completed()){
     console.log('in completed step');
     var newTransaction = new transaction(dataHelper.userid, 'payment', dataHelper.paymentAmount);
     var success = saveTransactionFunction(request, response, dataHelper, newTransaction);
 
   }else{
 
-    if(userId !== undefined || paymentAmount !== undefined){
+    if(correctPinEntered && (userId !== undefined || paymentAmount !== undefined)){
       //console.log('incrementing step');
       dataHelper.currentStep++;
     }
     //console.log('here');
-    if(dataHelper.currentStep < 2){
+    if(correctPinEntered && dataHelper.currentStep < 2){
     response.say(dataHelper.getPrompt());
   }
     response.reprompt("I didn't hear anything");
@@ -191,30 +214,31 @@ var saveTransactionFunction = function(request, response, dataHelper, newTransac
 // }
 
 skillService.intent('SaveTransactionIntent', {},function(request, response) {
-  console.log('in save transaction intent');
-  //var userId = 'jacob';
-  //var paymentAmount = 50;
 
-  var params = {
-    TableName: 'hokieCalandarTable',
-    Item: {
-        userid: 'jacob',
-        paymentAmount: 50
-    }
-  };
-  docClient.put(params, function(err, data){
-    console.log('in docClient put');
-    if(err){
-      console.log(err);
-    }else{
-      console.log(data);
-    }
-  });
-  console.log('out of save transaction intent');
-  //var newTransaction = new Transaction(userId, paymentAmount);
+  // return ajax.post(demoSiteUrl).set('Content-Type', 'text/javascript').send({
+  //             "userid": "jake",
+  //             "message": "hey matt"
+  //           }).then(res => {
+  //             console.log('im here');
+  //             console.log(res.status);
+  //             console.log(res.body);
+  //             //saveTransactionFunction(request, response, helper, newTransaction);
+  //           });
 
-  //databaseHelper.storeData(userId, newTransaction).then(
-    //return false;
+            // Find your account sid and auth token in your Twilio account Console.
+var client = twilio('AC15fb06ea622866e228ae46eb7b9d7a1e', '60bf6e80807bd635f109f59acdf7cee7');
+var pin = Math.round(Math.random()*10000);
+console.log(pin);
+// Send the text message.
+client.sendMessage({
+  to: '+15712715593',
+  //to: '+17032292405',
+  from: '+12403033123',
+  body: 'Here is your random PIN: '.concat(pin)
+}).then(res =>{
+  console.log('awaiting reply');
+});
+
 
   });
 
