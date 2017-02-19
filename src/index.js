@@ -246,7 +246,7 @@ var saveTransactionFunction = function(request, response, dataHelper, newTransac
     response.say('Your transaction was not saved unsuccessful');
   }
 
-  response.shouldEndSession(true).send();
+  response.shouldEndSession(false).send();
   return success;
 }
 
