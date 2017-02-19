@@ -1,4 +1,5 @@
 PaymentIntent pay {NAME}
 PaymentIntent {AMOUNT} dollars
 PaymentIntent transfer money
+PaymentIntent transfer {AMOUNT} dollars to {NAME}
 SaveTransactionIntent save transaction
