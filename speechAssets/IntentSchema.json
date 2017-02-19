@@ -1,0 +1,51 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent",
+      "slots": []
+    },
+    {
+      "intent": "AMAZON.StopIntent",
+      "slots": []
+    },
+    {
+      "intent": "AMAZON.HelpIntent",
+      "slots": []
+    },
+    {
+      "intent": "PaymentIntent",
+      "slots":[
+        {
+          "name": "NAME",
+          "type": "AMAZON.US_FIRST_NAME"
+        },
+        {
+          "name": "AMOUNT",
+          "type": "AMAZON.NUMBER"
+        }
+
+      ]
+    },
+    {
+      "intent" : "MaxPayIntent",
+      "slots" : [
+        {
+          "name": "LIMIT",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent" : "RecentTransferIntent",
+      "slots" : []
+    },
+    {
+      "intent" : "VerificationIntent",
+      "slots" : [{
+          "name": "PIN",
+          "type": "AMAZON.FOUR_DIGIT_NUMBER"
+        }
+      ]
+    }
+  ]
+}
